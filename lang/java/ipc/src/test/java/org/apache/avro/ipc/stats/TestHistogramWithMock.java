@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
@@ -13,6 +14,7 @@ import java.util.TreeSet;
 import org.apache.avro.ipc.stats.Histogram.Entry;
 import org.apache.avro.ipc.stats.Histogram.Segmenter;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class TestHistogramWithMock {
 
@@ -89,8 +91,20 @@ public class TestHistogramWithMock {
 
 	@Test
 	public void testFloatHistogram() {
+		Segmenter<String, Float> mockSingleBucketSegmenter = Mockito
+				.mock(Segmenter.class);
+		Mockito.doReturn(Collections.singletonList("X").iterator())
+				.when(mockSingleBucketSegmenter).getBuckets();
+		Mockito.doReturn(Collections.singletonList("X"))
+				.when(mockSingleBucketSegmenter).getBoundaryLabels();
+		Mockito.doReturn(Collections.singletonList("X"))
+				.when(mockSingleBucketSegmenter).getBucketLabels();
+		Mockito.doReturn(0).when(mockSingleBucketSegmenter)
+				.segment(Mockito.anyFloat());
+		Mockito.doReturn(1).when(mockSingleBucketSegmenter).size();
+
 		FloatHistogram<String> h = new FloatHistogram<>(
-				new SingleBucketSegmenter());
+				mockSingleBucketSegmenter);
 		h.add(12.0f);
 		h.add(10.0f);
 		h.add(20.0f);
