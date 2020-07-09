@@ -58,6 +58,7 @@
     <rat.version>0.13</rat.version>
     <source-plugin.version>3.0.1</source-plugin.version>
     <spotless-maven-plugin.version>1.27.0</spotless-maven-plugin.version>
+    <mockito.version>3.3.3</mockito.version>
   </properties>
 
   <modules>
@@ -177,11 +178,18 @@
             <version>${cglib_version}</version>
             <scope>test</scope>
         </dependency>
-          <dependency>
+        <dependency>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>extra-enforcer-rules</artifactId>
             <version>${extra-enforcer-rules.version}</version>
           </dependency>
+		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+		<dependency>
+		    <groupId>org.mockito</groupId>
+		    <artifactId>mockito-core</artifactId>
+		    <version>3.3.3</version>
+		    <scope>${mockito.version}</scope>
+		</dependency>
         </dependencies>
       </plugin>
       <plugin>
