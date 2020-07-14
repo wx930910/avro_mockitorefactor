@@ -28,34 +28,60 @@ import org.apache.avro.ipc.generic.GenericRequestor;
 import org.apache.avro.ipc.generic.GenericResponder;
 import org.apache.avro.util.Utf8;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class TestLocalTransceiver {
 
-  Protocol protocol = Protocol.parse("" + "{\"protocol\": \"Minimal\", " + "\"messages\": { \"m\": {"
-      + "   \"request\": [{\"name\": \"x\", \"type\": \"string\"}], " + "   \"response\": \"string\"} } }");
+	Protocol protocol = Protocol.parse("" + "{\"protocol\": \"Minimal\", "
+			+ "\"messages\": { \"m\": {"
+			+ "   \"request\": [{\"name\": \"x\", \"type\": \"string\"}], "
+			+ "   \"response\": \"string\"} } }");
 
-  static class TestResponder extends GenericResponder {
-    public TestResponder(Protocol local) {
-      super(local);
-    }
+	static class TestResponder extends GenericResponder {
+		public TestResponder(Protocol local) {
+			super(local);
+		}
 
-    @Override
-    public Object respond(Message message, Object request) throws AvroRemoteException {
-      assertEquals(new Utf8("hello"), ((GenericRecord) request).get("x"));
-      return new Utf8("there");
-    }
+		@Override
+		public Object respond(Message message, Object request)
+				throws AvroRemoteException {
+			assertEquals(new Utf8("hello"), ((GenericRecord) request).get("x"));
+			return new Utf8("there");
+		}
 
-  }
+	}
 
-  @Test
-  public void testSingleRpc() throws Exception {
-    Transceiver t = new LocalTransceiver(new TestResponder(protocol));
-    GenericRecord params = new GenericData.Record(protocol.getMessages().get("m").getRequest());
-    params.put("x", new Utf8("hello"));
-    GenericRequestor r = new GenericRequestor(protocol, t);
+	static class MockTestResponder {
+		public GenericResponder instance;
 
-    for (int x = 0; x < 5; x++)
-      assertEquals(new Utf8("there"), r.request("m", params));
-  }
+		public MockTestResponder(Protocol local) {
+			Mockito.mock(GenericResponder.class,
+					Mockito.withSettings().useConstructor(local));
+			try {
+				Mockito.doAnswer(invocation -> {
+					Object request = invocation.getArgument(1);
+					assertEquals(new Utf8("hello"),
+							((GenericRecord) request).get("x"));
+					return new Utf8("there");
+				}).when(this.instance).respond(Mockito.any(Message.class),
+						Mockito.any());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@Test
+	public void testSingleRpc() throws Exception {
+		Transceiver t = new LocalTransceiver(
+				new MockTestResponder(protocol).instance);
+		GenericRecord params = new GenericData.Record(
+				protocol.getMessages().get("m").getRequest());
+		params.put("x", new Utf8("hello"));
+		GenericRequestor r = new GenericRequestor(protocol, t);
+
+		for (int x = 0; x < 5; x++)
+			assertEquals(new Utf8("there"), r.request("m", params));
+	}
 
 }
