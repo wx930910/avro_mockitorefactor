@@ -25,65 +25,43 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class TestStopwatch {
-
-	public class MockFakeTicks {
-		public Ticks instance;
-
-		long time = 0;
-
-		public MockFakeTicks() {
-			this.instance = Mockito.mock(Ticks.class);
-			Mockito.doAnswer(invocation -> {
-				return this.time;
-			}).when(this.instance).ticks();
-		}
-
-		public void passTime(long nanos) {
-			time += nanos;
-		}
-
-	}
-
 	@Test
 	public void testNormal() {
-		MockFakeTicks f = new MockFakeTicks();
-		Stopwatch s = new Stopwatch(f.instance);
-		f.passTime(10);
+		Ticks tick = Mockito.mock(Ticks.class);
+		Mockito.when(tick.ticks()).thenReturn(10L, 30L, 70L, 150L);
+		Stopwatch s = new Stopwatch(tick);
 		s.start();
-		f.passTime(20);
 		assertEquals(20, s.elapsedNanos());
-		f.passTime(40);
 		s.stop();
-		f.passTime(80);
 		assertEquals(60, s.elapsedNanos());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testNotStarted1() {
-		MockFakeTicks f = new MockFakeTicks();
-		Stopwatch s = new Stopwatch(f.instance);
+		Ticks tick = Mockito.mock(Ticks.class);
+		Stopwatch s = new Stopwatch(tick);
 		s.elapsedNanos();
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testNotStarted2() {
-		MockFakeTicks f = new MockFakeTicks();
-		Stopwatch s = new Stopwatch(f.instance);
+		Ticks tick = Mockito.mock(Ticks.class);
+		Stopwatch s = new Stopwatch(tick);
 		s.stop();
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testTwiceStarted() {
-		MockFakeTicks f = new MockFakeTicks();
-		Stopwatch s = new Stopwatch(f.instance);
+		Ticks tick = Mockito.mock(Ticks.class);
+		Stopwatch s = new Stopwatch(tick);
 		s.start();
 		s.start();
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testTwiceStopped() {
-		MockFakeTicks f = new MockFakeTicks();
-		Stopwatch s = new Stopwatch(f.instance);
+		Ticks tick = Mockito.mock(Ticks.class);
+		Stopwatch s = new Stopwatch(tick);
 		s.start();
 		s.stop();
 		s.stop();
