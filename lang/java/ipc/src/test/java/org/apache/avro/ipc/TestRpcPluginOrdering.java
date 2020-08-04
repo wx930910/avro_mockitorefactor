@@ -27,6 +27,8 @@ import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.avro.test.Mail;
 import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 public class TestRpcPluginOrdering {
 
@@ -65,23 +67,34 @@ public class TestRpcPluginOrdering {
 
 	@Test
 	public void testRpcPluginOrdering() throws Exception {
-		OrderPlugin plugin = new OrderPlugin();
+		// OrderPlugin plugin = new OrderPlugin();
+		// Mock RPCPlugin
+		RPCPlugin plugin = Mockito.mock(RPCPlugin.class);
 
-		SpecificResponder responder = new SpecificResponder(Mail.class,
-				new TestMailImpl());
-		SpecificRequestor requestor = new SpecificRequestor(Mail.class,
-				new LocalTransceiver(responder));
+		// Pass plugin to Mockito.InOrder
+		InOrder inOrder = Mockito.inOrder(plugin);
+
+		SpecificResponder responder = new SpecificResponder(Mail.class, new TestMailImpl());
+		SpecificRequestor requestor = new SpecificRequestor(Mail.class, new LocalTransceiver(responder));
 		responder.addRPCPlugin(plugin);
 		requestor.addRPCPlugin(plugin);
 
 		Mail client = SpecificRequestor.getClient(Mail.class, requestor);
 		Message message = createTestMessage();
 		client.send(message);
+		// Verify methods execution order
+		inOrder.verify(plugin).clientStartConnect(Mockito.any(RPCContext.class));
+		inOrder.verify(plugin).clientSendRequest(Mockito.any(RPCContext.class));
+		inOrder.verify(plugin).serverConnecting(Mockito.any(RPCContext.class));
+		inOrder.verify(plugin).serverReceiveRequest(Mockito.any(RPCContext.class));
+		inOrder.verify(plugin).serverSendResponse(Mockito.any(RPCContext.class));
+		inOrder.verify(plugin).clientFinishConnect(Mockito.any(RPCContext.class));
+		inOrder.verify(plugin).clientReceiveResponse(Mockito.any(RPCContext.class));
 	}
 
 	private Message createTestMessage() {
-		Message message = Message.newBuilder().setTo("me@test.com")
-				.setFrom("you@test.com").setBody("plugin testing").build();
+		Message message = Message.newBuilder().setTo("me@test.com").setFrom("you@test.com").setBody("plugin testing")
+				.build();
 		return message;
 	}
 
